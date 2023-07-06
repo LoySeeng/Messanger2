@@ -5,9 +5,12 @@
 #include "Messenger.h"
 #include "User.h"
 #include "Chat.h"
+#include "Server.h"
+#include "Client.h"
 
 
 Messenger Hell;
+std::map <std::string, std::string> Messenger::Base;
 
 
 void page1() {
@@ -99,6 +102,21 @@ void page2(std::string uname) {
 
     do {
         std::cout << "\n \n \n \n \t \t \t Welcome, " << uname << "! \n" << std::endl;
+        
+        std::cout << "Do you want to operate as a server or a client?" << std::endl;
+        std::cout << "1 - Server, 2 - Client" << std::endl;
+        int SC;
+        std::cin >> SC;
+        if (SC == 1) {
+            void processRequest();
+        }
+        else if (SC == 2) {
+            void sendRequest();
+        }
+        else {
+            std::cout << "Can't establish connection. Continuing work in offline mode.\n" << std::endl;
+        }
+
         std::cout << "What do you want to do:\n" << std::endl;
         std::cout << "1 - Check mailbox \n2 - Send a message to the person \n3 - Send a message to everyone \n4 - Log Out \n" << std::endl;
 
@@ -106,6 +124,20 @@ void page2(std::string uname) {
         switch (choice2) {
         case 1: {
             list[uname].mailbox(uname);
+
+            if (SC == 1) {
+                std::cout << "Last recived message: " << std::endl;
+                length = sizeof(client);
+                message_size = recvfrom(socket_file_descriptor, buffer, sizeof(buffer), 0, (struct sockaddr*)&client, &length);
+                buffer[message_size] = '\0';
+                std::cout << buffer << std::endl;
+            }
+            else if (SC == 2) {
+                std::cout << "Last recived message: " << std::endl;
+                recvfrom(socket_descriptor, buffer, sizeof(buffer), 0, nullptr, nullptr);
+                std::cout << buffer << std::endl;
+            }
+            
             break;
         }
         case 2: {
@@ -116,8 +148,17 @@ void page2(std::string uname) {
             std::cout << "\nEnter your message: \n" << std::endl;
             std::cout << "\t";
             std::cin.ignore();
-            std::getline(std::cin, message);
+            std::cin >> SendMessage;
+            message = SendMessage;
+            if (SC == 1) {
+                sendto(socket_file_descriptor, SendMessage, MESSAGE_BUFFER, 0, (struct sockaddr*)&client, sizeof(client));
+            }
+            else {
+                sendto(socket_descriptor, SendMessage, MESSAGE_BUFFER, 0, nullptr, sizeof(serveraddress));
+            }
+            
             list[reciepient].chat_on(uname, reciepient, message);
+
             std::cout << "\nYour message has been sent successfully" << std::endl;
             break;
         }
@@ -162,6 +203,12 @@ void page2(std::string uname) {
         case 4: {
             system("cls");
             std::cout << "You have been logged out" << std::endl;
+            if (SC == 1) {
+                close(socket_file_descriptor);
+            }
+            else if (SC == 2) {
+                close(socket_descriptor);
+            }
             page1();
             break;
         }
